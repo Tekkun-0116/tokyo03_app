@@ -5,21 +5,33 @@ require_once('functions.php');
 
 session_start();
 
-$dbh = connectDb();
-$sql = 'SELECT * FROM lives ORDER BY updated_at ASC';
-$stmt = $dbh->prepare($sql);
-$stmt->execute();
+$id = $_REQUEST['id'];
+if (!is_numeric($id)) {
+  exit;
+}
 
-$lives = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$dbh = connectDb();
+
+// 編集するデータを取得
+$sql = 'SELECT * FROM lives WHERE id = :id';
+$stmt = $dbh->prepare($sql);
+$stmt->bindParam(':id', $id, PDO::PARAM_INT);
+$stmt->execute();
+$live = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (empty($live)) {
+  header('Location: index.php');
+  exit;
+}
 
 ?>
-
 <!DOCTYPE html>
 <html lang="ja">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Tokyo03 Blog</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
@@ -49,31 +61,24 @@ $lives = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </ul>
       </div>
     </nav>
-
     <div class="container">
       <div class="row">
-        <div class="col-sm-20 col-md-20 col-lg-20 mx-auto">
-          <div class="row">
-            <?php foreach ($lives as $live) : ?>
-              <div class="col-md-6">
-                <div class="article">
-                  <h3 class="live-title"><a href="show.php?id=<?php echo h($live['id']); ?>"><?php echo h($live['title']); ?></a></h3>
-                  <p>公演日時:<?php echo h($live['live_date']); ?></p>
-                  <p>ライブ内容:<?php echo h($live['content']); ?></p>
-                  <p><?php echo h(mb_strimwidth($live['body'], 0, 63, "...")) ?></p>
-                </div>
-                <hr>
-              </div>
-            <?php endforeach; ?>
-          </div>
+        <div class="col-md-11 col-lg-9 mx-auto mt-5">
+          <h2><?= h($live['title']) ?></h2>
+          <p>公演日時 : <?= h($live['live_date']) ?></p>
+          <p>ライブ内容 : <?= h($live['content']) ?></p>
+          <hr>
+          <p>
+            <?= nl2br(h($live['body'])) ?>
+          </p>
+            <a href="comment.php?id=<?= h($live['id']) ?>" class="btn btn-success">コメント</a>
+          <a href="index.php" class="btn btn-info">戻る</a>
         </div>
       </div>
     </div>
-
     <footer class="footer font-small bg-info">
       <div class="footer-copyright text-center py-3 text-light">&copy; 2020 Tokyo03 Blog</div>
     </footer>
-  </div>
 </body>
 
 </html>
